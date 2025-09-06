@@ -168,15 +168,18 @@ h2 {
     margin: 0;
 }
 
-#resultsTable {
+#resultsTable,
+#wardWiseCollectionTable {
     width: 100%;
     border-collapse: collapse;
     margin-top: 20px;
     font-size: 0.9em;
 }
 
-#resultsTable table th,
-table td {
+#resultsTable th,
+#resultsTable td,
+#wardWiseCollectionTable th,
+#wardWiseCollectionTable td {
     border: 1px solid #E0E0E0;
     /* Light Gray borders/dividers */
     padding: 10px 15px;
@@ -189,14 +192,121 @@ table td {
     /* Prevent text wrapping */
 }
 
-#resultsTable thead th {
+#resultsTable thead th,
+#wardWiseCollectionTable thead th {
     background-color: #4CAF50;
     /* Medium Green */
     color: white;
     font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
 }
+
+/* Print Styles */
+@media print {
+    * {
+        -webkit-print-color-adjust: exact !important;
+        color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    body {
+        background-color: white !important;
+        color: black !important;
+        font-size: 12pt;
+        line-height: 1.4;
+    }
+
+    .upload-section,
+    .logo,
+    h1,
+    #reportSelect,
+    button[onclick="printReport()"] {
+        display: none !important;
+    }
+
+    .results-section {
+        display: block !important;
+        background: white !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .summary-cards {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 10px !important;
+        page-break-inside: avoid;
+    }
+
+    .card {
+        background: white !important;
+        border: 1px solid #ccc !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+        flex: 1 1 200px !important;
+    }
+
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        font-size: 10pt !important;
+    }
+
+    th,
+    td {
+        border: 1px solid #000 !important;
+        padding: 5px !important;
+        background: white !important;
+        color: black !important;
+    }
+
+    th {
+        background-color: #f0f0f0 !important;
+        font-weight: bold !important;
+    }
+
+    .results-section h3 {
+        color: black !important;
+        page-break-after: avoid;
+    }
+
+    /* Ensure tables don't break mid-row */
+    tr {
+        page-break-inside: avoid;
+    }
+
+    /* Handle wide tables */
+    .results-section {
+        overflow: visible !important;
+    }
+
+    /* Force visibility of all report content */
+    #results,
+    #resultsTable,
+    #wardWiseCollectionTable,
+    .summary-cards {
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    /* Handle selective printing based on body classes */
+    body.print-supervisor-only .ward-wise-report,
+    body.print-supervisor-only .ward-wise-summary-cards,
+    body.print-supervisor-only #wardWiseCollectionTable {
+        display: none !important;
+    }
+
+    body.print-wardwise-only .supervisor-analysis,
+    body.print-wardwise-only .supervisor-summary-cards,
+    body.print-wardwise-only #resultsTable {
+        display: none !important;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+}
+
+
 
 #resultsTable tbody tr:nth-child(even) {
     background-color: #A5D6A7;
@@ -357,6 +467,13 @@ table td {
     background: #f9f9f9;
 }
 
+.missing-data {
+    background-color: #ffdddd;
+    /* Light red background */
+    color: #cc0000;
+    /* Darker red text */
+}
+
 @media (max-width: 768px) {
     .container {
         padding: 10px;
@@ -373,5 +490,22 @@ table td {
     #resultsTable th,
     #resultsTable td {
         padding: 8px;
+    }
+}
+
+@media print {
+
+    .upload-section,
+    .logo,
+    h1,
+    #reportSelect,
+    #reportSelect+button {
+        /* Selects the button right after #reportSelect */
+        display: none !important;
+    }
+
+    /* Ensure results section is visible when printing */
+    .results-section {
+        display: block !important;
     }
 }

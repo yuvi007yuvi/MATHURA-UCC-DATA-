@@ -24,6 +24,13 @@
             </CENTER>
 
 
+            <label for="reportSelect">Select Report to Print:</label>
+            <select id="reportSelect">
+                <option value="all">All Reports</option>
+                <option value="supervisor">Detailed Supervisor Analysis</option>
+                <option value="wardwise">Ward-wise Collection Report</option>
+            </select>
+            <button onclick="printReport()">Print Report</button>
             <div class="summary-cards">
                 <div class="card">
                     <h3>Total Supervisors</h3>
@@ -47,8 +54,8 @@
                 </div>
             </div>
 
-             <h3>Detailed Supervisor Analysis</h3>
-            <table id="resultsTable">
+             <h3 class="supervisor-analysis">Detailed Supervisor Analysis</h3>
+            <table id="resultsTable" class="supervisor-table">
                 <thead>
                     <tr>
                         <th data-column="Supervisor Name">Supervisor Name</th>
@@ -65,6 +72,39 @@
                     </tr>
                 </thead>
                 <tbody id="resultsBody">
+                </tbody>
+            </table>
+
+            <h3 class="ward-wise-report">Ward-wise Collection Report</h3>
+            <div class="summary-cards ward-wise-summary-cards">
+                <div class="card">
+                    <h3>Total Wards with Data</h3>
+                    <p id="totalWardsWithData">0</p>
+                </div>
+                <div class="card">
+                    <h3>Total Slips (Ward-wise)</h3>
+                    <p id="totalWardSlips">0</p>
+                </div>
+                <div class="card">
+                    <h3>Total Amount (Ward-wise)</h3>
+                    <p id="totalWardAmount">0.00</p>
+                </div>
+                <div class="card">
+                    <h3>Missing Wards</h3>
+                    <p id="missingWardsCount">0</p>
+                    <p id="missingWardsList"></p>
+                </div>
+            </div>
+            <table id="wardWiseCollectionTable">
+                <thead>
+                    <tr>
+                        <th>Ward</th>
+                        <th>Total Slips</th>
+                        <th>Total Amount</th>
+                        <th>Property Type Name</th>
+                    </tr>
+                </thead>
+                <tbody id="wardWiseCollectionBody">
                 </tbody>
             </table>
         </div>

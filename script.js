@@ -31,6 +31,7 @@ function processCSV(csvData) {
     const timeIndex = headers.indexOf('Time');
     const wardIndex = headers.indexOf('Ward Name');
     const totalAmountIndex = headers.indexOf('Amount Collected'); // Corrected header for total amount
+    const propertyTypeIndex = headers.indexOf('Property Type Name');
     
     console.log('Headers found:', headers);
     console.log('Indices:', {
@@ -38,7 +39,8 @@ function processCSV(csvData) {
         supervisorIDIndex,
         dateIndex,
         timeIndex,
-        wardIndex
+        wardIndex,
+        propertyTypeIndex
     });
     
     if (supervisorNameIndex === -1 || supervisorIDIndex === -1 || dateIndex === -1 || timeIndex === -1) {
@@ -47,7 +49,7 @@ function processCSV(csvData) {
     }
 
     const supervisorData = {};
-    const wardData = {};
+    const wardCollectionData = {}; // New object for ward-wise collection
 
     // Process each row
     for (let i = 1; i < lines.length; i++) {
@@ -63,6 +65,7 @@ function processCSV(csvData) {
         const time = columns[timeIndex].replace(/"/g, '');
         const wardName = wardIndex !== -1 ? (columns[wardIndex]?.replace(/"/g, '') || 'Unknown') : 'Unknown';
         const rawTotalAmount = columns[totalAmountIndex]?.replace(/"/g, '') || '0';
+        const propertyType = propertyTypeIndex !== -1 ? (columns[propertyTypeIndex]?.replace(/"/g, '') || 'Unknown') : 'Unknown';
         // Remove any characters that are not digits or a decimal point
         const cleanedTotalAmount = rawTotalAmount.replace(/[^0-9.]/g, '');
         const totalAmount = totalAmountIndex !== -1 ? parseFloat(cleanedTotalAmount) : 0;
@@ -88,7 +91,8 @@ function processCSV(csvData) {
                 firstDateTime: dateTime,
                 lastDateTime: dateTime,
                 count: 1,
-                totalAmount: totalAmount
+                totalAmount: totalAmount,
+                wards: {} // Initialize wards for each supervisor
             };
         } else {
             supervisorData[key].count++;
@@ -107,20 +111,74 @@ function processCSV(csvData) {
             supervisorData[key].totalAmount += totalAmount;
         }
 
-        // Process ward data
-        if (!wardData[key]) wardData[key] = {};
-        if (!wardData[key][wardName]) wardData[key][wardName] = { count: 0, totalAmount: 0 };
-        wardData[key][wardName].count++;
-        wardData[key][wardName].totalAmount += totalAmount;
+        // Process ward data for each supervisor
+        if (!supervisorData[key].wards[wardName]) {
+            supervisorData[key].wards[wardName] = { count: 0, totalAmount: 0 };
+        }
+        supervisorData[key].wards[wardName].count++;
+        supervisorData[key].wards[wardName].totalAmount += totalAmount;
+
+        // Aggregate ward-wise collection data globally
+        if (!wardCollectionData[wardName]) {
+            wardCollectionData[wardName] = { totalSlips: 0, totalAmount: 0, propertyTypes: {} };
+        }
+        wardCollectionData[wardName].totalSlips++;
+        wardCollectionData[wardName].totalAmount += totalAmount;
+        if (!wardCollectionData[wardName].propertyTypes[propertyType]) {
+            wardCollectionData[wardName].propertyTypes[propertyType] = 0;
+        }
+        wardCollectionData[wardName].propertyTypes[propertyType]++;
     }
 
-    // Add ward information to supervisor data
+    // Add ward information to supervisor data (for display in supervisor table)
     for (const key in supervisorData) {
-        supervisorData[key].wards = wardData[key] || {};
         supervisorData[key].wardList = Object.keys(supervisorData[key].wards).join(', ');
     }
 
     displayResults(supervisorData);
+    displayWardWiseCollection(wardCollectionData);
+    updateWardWiseSummaryCards(wardCollectionData);
+    document.getElementById('results').style.display = 'block';
+}
+
+function updateWardWiseSummaryCards(data) {
+    const totalWardsWithData = Object.keys(data).length;
+    const totalWardSlips = Object.values(data).reduce((sum, ward) => sum + ward.totalSlips, 0);
+    const totalWardAmount = Object.values(data).reduce((sum, ward) => sum + ward.totalAmount, 0);
+    const allWards = Array.from({ length: 70 }, (_, i) => (i + 1).toString());
+    const missingWards = allWards.filter(ward => !data[ward]);
+    const missingWardsCount = missingWards.length;
+    const missingWardsList = missingWards.join(', ');
+
+    document.getElementById('totalWardsWithData').textContent = totalWardsWithData;
+    document.getElementById('totalWardSlips').textContent = totalWardSlips;
+    document.getElementById('totalWardAmount').textContent = totalWardAmount.toFixed(2);
+    document.getElementById('missingWardsCount').textContent = missingWardsCount;
+    document.getElementById('missingWardsList').textContent = missingWardsList;
+}
+
+function printReport() {
+    const reportType = document.getElementById('reportSelect').value;
+    
+    // Add a temporary class to body for print styling
+    document.body.classList.add('printing');
+    
+    // Handle report type selection by adding specific classes
+    if (reportType === 'supervisor') {
+        document.body.classList.add('print-supervisor-only');
+    } else if (reportType === 'wardwise') {
+        document.body.classList.add('print-wardwise-only');
+    } else {
+        document.body.classList.add('print-all');
+    }
+    
+    // Trigger print
+    window.print();
+    
+    // Clean up classes after print dialog closes
+    setTimeout(() => {
+        document.body.classList.remove('printing', 'print-supervisor-only', 'print-wardwise-only', 'print-all');
+    }, 100);
 }
 
 function parseCSVLine(line) {
@@ -197,8 +255,7 @@ function displayResults(data) {
         const row = document.createElement('tr');
         row.insertCell().textContent = serialNumber++;
         row.insertCell().textContent = item.supervisorName;
-        row.insertCell().textContent = item.supervisorID;
-        row.insertCell().textContent = item.firstDate;
+        row.insertCell().textContent = item.supervisorID;        row.insertCell().textContent = item.firstDate;
         row.insertCell().textContent = item.firstTime;
         row.insertCell().textContent = item.lastDate;
         row.insertCell().textContent = item.lastTime;
@@ -349,4 +406,35 @@ function clearFilters() {
     const supervisorAnalysis = processSupervisorData(filteredData);
     displayResults(supervisorAnalysis);
     displaySummaryCards(supervisorAnalysis, filteredData);
+}
+
+function displayWardWiseCollection(data) {
+    const wardWiseCollectionBody = document.getElementById('wardWiseCollectionBody');
+    wardWiseCollectionBody.innerHTML = ''; // Clear previous results
+
+    const allWards = Array.from({ length: 70 }, (_, i) => (i + 1).toString());
+
+    allWards.forEach(wardName => {
+        const row = wardWiseCollectionBody.insertRow();
+        const wardData = data[wardName];
+
+        if (wardData) {
+            row.insertCell().textContent = wardName;
+            row.insertCell().textContent = wardData.totalSlips;
+            row.insertCell().textContent = wardData.totalAmount.toFixed(2);
+
+            const propertyTypes = wardData.propertyTypes;
+            const propertyTypeDetails = Object.entries(propertyTypes)
+                .map(([type, count]) => `${type}: ${count}`)
+                .join(', ');
+            row.insertCell().textContent = propertyTypeDetails;
+        } else {
+            row.classList.add('missing-data'); // Add class for styling
+            row.insertCell().textContent = wardName;
+            row.insertCell().textContent = 'N/A';
+            row.insertCell().textContent = 'N/A';
+            row.insertCell().textContent = 'N/A';
+        }
+        wardWiseCollectionBody.appendChild(row);
+    });
 }
