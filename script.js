@@ -120,7 +120,7 @@ function processCSV(csvData) {
 
         // Aggregate ward-wise collection data globally
         if (!wardCollectionData[wardName]) {
-            wardCollectionData[wardName] = { totalSlips: 0, totalAmount: 0, propertyTypes: {} };
+            wardCollectionData[wardName] = { totalSlips: 0, totalAmount: 0, propertyTypes: {}, supervisors: [] };
         }
         wardCollectionData[wardName].totalSlips++;
         wardCollectionData[wardName].totalAmount += totalAmount;
@@ -128,6 +128,11 @@ function processCSV(csvData) {
             wardCollectionData[wardName].propertyTypes[propertyType] = 0;
         }
         wardCollectionData[wardName].propertyTypes[propertyType]++;
+        
+        // Collect supervisor names for this ward
+        if (!wardCollectionData[wardName].supervisors.includes(supervisorName)) {
+            wardCollectionData[wardName].supervisors.push(supervisorName);
+        }
     }
 
     // Add ward information to supervisor data (for display in supervisor table)
@@ -423,6 +428,10 @@ function displayWardWiseCollection(data) {
             row.insertCell().textContent = wardData.totalSlips;
             row.insertCell().textContent = wardData.totalAmount.toFixed(2);
 
+            // Get unique supervisor names for this ward
+            const supervisorNames = [...new Set(wardData.supervisors || [])].join(', ');
+            row.insertCell().textContent = supervisorNames || 'N/A';
+
             const propertyTypes = wardData.propertyTypes;
             const propertyTypeDetails = Object.entries(propertyTypes)
                 .map(([type, count]) => `${type}: ${count}`)
@@ -431,6 +440,7 @@ function displayWardWiseCollection(data) {
         } else {
             row.classList.add('missing-data'); // Add class for styling
             row.insertCell().textContent = wardName;
+            row.insertCell().textContent = 'N/A';
             row.insertCell().textContent = 'N/A';
             row.insertCell().textContent = 'N/A';
             row.insertCell().textContent = 'N/A';
